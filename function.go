@@ -2,11 +2,14 @@
 package p
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 
+	"cloud.google.com/go/logging"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
@@ -18,22 +21,46 @@ func init() {
 // of the request or "Hello, World!" if there isn't one.
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
 
+	_, isExist := os.LookupEnv("FUNCTION_SIGNATURE_TYPE")
+
+	var logger *log.Logger
+	if isExist {
+
+		ctx := context.Background()
+
+		// Sets your Google Cloud Platform project ID.
+		client, err := logging.NewClient(ctx, os.Getenv("GCP_PROJECT"))
+		if err != nil {
+			log.Fatalf("Failed to create client: %v", err)
+		}
+		defer client.Close()
+
+		logName := "my-log"
+
+		logger = client.Logger(logName).StandardLogger(logging.Info)
+	} else {
+
+		logger = log.New(os.Stdout, "", log.LstdFlags|log.LUTC)
+	}
+
 	api_url := "https://opendata.resas-portal.go.jp/api/v1/prefectures"
 	req, err := http.NewRequest("GET", api_url, nil)
 
 	if err != nil {
 
+		logger.Println("can't create request")
 		// bad requestの原因を書く。
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
 	req.Header.Set("X-API-KEY", os.Getenv("PREFECUTRE_API_KEY"))
-	client := new(http.Client)
-	resp, err := client.Do(req)
+	http_client := new(http.Client)
+	resp, err := http_client.Do(req)
 
 	if err != nil {
 
+		logger.Println("can't create response")
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -42,6 +69,7 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 	byteArray, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
+		logger.Println("can't write response body")
 		// reponse
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
