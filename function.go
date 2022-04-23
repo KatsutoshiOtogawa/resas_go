@@ -82,7 +82,7 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Access-Control-Allow-Origin", "https://katsutoshiotogawa.github.io/frontend_next/")
+	w.Header().Add("Access-Control-Allow-Origin", "https://katsutoshiotogawa.github.io")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	// jsonをクライアントに返す。
 	fmt.Fprint(w, string(byteArray))
