@@ -43,6 +43,8 @@ jobs:
         description: google function for front end api
         # entry_point: index.js
         ingress_settings: ALLOW_ALL
+        env_vars:
+          - PREFECUTRE_API_KEY: ${{ secrets.PREFECTURE_API_KEY }}
 
     # Example of using the output
     - id: 'test'
