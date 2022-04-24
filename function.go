@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/logging"
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
@@ -23,6 +24,8 @@ func CreateLogger() *log.Logger {
 	_, isExist := os.LookupEnv("FUNCTION_SIGNATURE_TYPE")
 
 	var logger *log.Logger
+
+	// gcp環境かどうかの確認。
 	if isExist {
 
 		ctx := context.Background()
@@ -43,6 +46,21 @@ func CreateLogger() *log.Logger {
 	}
 
 	return logger
+}
+
+// 適切なoriginを設定する。
+func CreateAccessControlAllowOrigin() string {
+
+	accessAllowOriginList := []string{"https://katsutoshiotogawa.github.io"}
+
+	// テスト環境ならlocalhostからも見れるようにしたいので、https://127.0.0.1を有効にしておく。
+
+	_, isExist := os.LookupEnv("LOCAL_ENV")
+	if isExist {
+		accessAllowOriginList = append(accessAllowOriginList, "https://127.0.0.1")
+	}
+
+	return strings.Join(accessAllowOriginList, " ")
 }
 
 // HelloWorld prints the JSON encoded "message" field in the body
@@ -82,7 +100,8 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Access-Control-Allow-Origin", "https://katsutoshiotogawa.github.io")
+	origin := CreateAccessControlAllowOrigin()
+	w.Header().Add("Access-Control-Allow-Origin", origin)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	// jsonをクライアントに返す。
 	fmt.Fprint(w, string(byteArray))
